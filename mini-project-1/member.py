@@ -7,6 +7,7 @@ import asyncio
 member_router = APIRouter()
 
 # Template engine
+# Template engine
 templates = Jinja2Templates(directory="templates")
 
 # Mock database
@@ -68,10 +69,9 @@ async def delete_member(member_id: int):
 
 @member_router.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("member.html", {   # 🔥 BURASI DEĞİŞTİ
+    return templates.TemplateResponse("home.html", {
         "request": request,
-        "members": members,
-        "member": None
+        "members": members
     })
 
 
