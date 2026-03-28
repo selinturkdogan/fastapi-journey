@@ -1,13 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
-from database.connection import Database
 from models.users import User, UserSignIn
 
-router = APIRouter(prefix="/user", tags=["User"])
-
-user_db = Database(User)
+router = APIRouter()
 
 @router.post("/signup")
-async def sign_user_up(user: User):
+async def sign_up(user: User):
     existing_user = await User.find_one(User.email == user.email)
 
     if existing_user:
@@ -16,13 +13,12 @@ async def sign_user_up(user: User):
             detail="User already exists"
         )
 
-    await user_db.save(user)
-
-    return {"message": "User created successfully"}
+    await user.insert()
+    return {"message": "User created successfully", "email": user.email}
 
 
 @router.post("/signin")
-async def sign_user_in(user: UserSignIn):
+async def sign_in(user: UserSignIn):
     existing_user = await User.find_one(User.email == user.email)
 
     if not existing_user:
@@ -32,9 +28,9 @@ async def sign_user_in(user: UserSignIn):
         )
 
     if existing_user.password == user.password:
-        return {"message": "User signed in successfully"}
+        return {"message": "Login successful"}
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Wrong password"
+        detail="Invalid credentials"
     )
