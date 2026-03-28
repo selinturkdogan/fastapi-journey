@@ -22,3 +22,14 @@ async def get_event(event_id: str):
         raise HTTPException(status_code=404, detail="Event not found")
 
     return event
+
+@router.delete("/events/{event_id}")
+async def delete_event(event_id: str):
+    event = await Event.get(event_id)
+
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    await event.delete()
+
+    return {"message": "Event deleted successfully"}
