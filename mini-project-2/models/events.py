@@ -2,6 +2,7 @@ from beanie import Document
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 class Event(Document):
     title: str
     image: str
