@@ -33,3 +33,20 @@ async def delete_event(event_id: str):
     await event.delete()
 
     return {"message": "Event deleted successfully"}
+
+@router.put("/events/{event_id}")
+async def update_event(event_id: str, updated_event: Event):
+    event = await Event.get(event_id)
+
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    event.title = updated_event.title
+    event.image = updated_event.image
+    event.description = updated_event.description
+    event.tags = updated_event.tags
+    event.location = updated_event.location
+
+    await event.save()
+
+    return event
