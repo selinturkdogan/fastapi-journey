@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtime Polling App</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI', sans-serif;
+        }
+
+        .layout{
+            display:flex;
+            gap:30px;
+            align-items:center;
+}
+
+        body{
+            background:linear-gradient(135deg,#fbc2eb,#a6c1ee);
+            min-height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            color:#4b2e4f;
+            padding:20px;
+        }
+
+        .container{
+            width:520px;
+            background:rgba(255,255,255,0.55);
+            border:2px solid rgba(255,255,255,0.4);
+            padding:35px;
+            border-radius:28px;
+            backdrop-filter:blur(14px);
+            box-shadow:0 10px 35px rgba(119, 90, 151, 0.25);
+        }
+
+        h1{
+            text-align:center;
+            margin-bottom:30px;
+            font-size:2rem;
+            color:#7c3f8c;
+            letter-spacing:1px;
+        }
+
+        .question{
+            font-size:24px;
+            margin-bottom:25px;
+            text-align:center;
+            font-weight:600;
+            color:#5c2c70;
+        }
+
+        .option{
+            margin-bottom:18px;
+        }
+
+        button{
+            width:100%;
+            padding:16px;
+            border:none;
+            border-radius:16px;
+            background:linear-gradient(135deg,#ff9ecf,#c084fc);
+            color:white;
+            font-size:16px;
+            font-weight:bold;
+            cursor:pointer;
+            transition:0.3s ease;
+            box-shadow:0 5px 15px rgba(192,132,252,0.3);
+        }
+
+        button:hover{
+            transform:translateY(-2px) scale(1.01);
+            background:linear-gradient(135deg,#f472b6,#a855f7);
+        }
+
+        .votes{
+            margin-top:8px;
+            text-align:center;
+            font-size:15px;
+            color:#6b4c7d;
+        }
+
+        .status{
+            margin-top:24px;
+            text-align:center;
+            color:#10b981;
+            font-weight:bold;
+            font-size:15px;
+        }
+
+</style>
+
+</head>
+<body>
+
+<div class="layout">
+
+    <div class="container">
+
+        <h1>Realtime Polling App</h1>
+
+        <div id="question" class="question">
+            Loading...
+        </div>
+
+        <div id="options"></div>
+
+        <div id="status" class="status">
+            Connecting...
+        </div>
+
+    </div>
+
+    <div class="container">
+
+        <h1>Live Results</h1>
+
+        <div id="live-results">
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    let currentPoll = null;
+
+    async function loadPoll() {
+
+        const response = await fetch("/polls");
+
+        const polls = await response.json();
+
+        if (polls.length === 0) {
+
+            document.getElementById("question").innerText =
+                "No poll found";
+
+            return;
+        }
+
+        currentPoll = polls[0];
+
+        renderPoll(currentPoll);
+
+        connectWebSocket(currentPoll.id);
+    }
+
+    function renderPoll(poll) {
+
+        document.getElementById("question").innerText =
+            poll.question;
+
+        const optionsContainer =
+            document.getElementById("options");
+
+        optionsContainer.innerHTML = "";
+
+        const liveResults =
+    document.getElementById("live-results");
+
+liveResults.innerHTML = "";
+
+        for (const option in poll.votes) {
+
+            const votes = poll.votes[option];
+
+            optionsContainer.innerHTML += `
+
+    
+            
+                <div class="option">
+                    <button onclick="vote('${option}')">
+                        ${option}
+                    </button>
+
+                    <div class="votes">
+                        Votes: ${votes}
+                    </div>
+                </div>
+            `;
+            liveResults.innerHTML += `
+    <div class="option">
+
+        <button>
+            ${option}
+        </button>
+
+        <div class="votes">
+            Total Votes: ${votes}
+        </div>
+
+    </div>
+`;
+        }
+    }
+
+    async function vote(option) {
+
+        await fetch(
+            `/polls/${currentPoll.id}/vote?option=${option}`,
+            {
+                method: "POST"
+            }
+        );
+    }
+
+    function connectWebSocket(pollId) {
+
+        const protocol =
+    window.location.protocol === "https:"
+    ? "wss"
+    : "ws";
+
+const ws = new WebSocket(
+    `${protocol}://${window.location.host}/ws/polls/${pollId}`
+);
+        ws.onmessage = (event) => {
+
+            const data = JSON.parse(event.data);
+
+            if (data.type === "vote_update") {
+
+                renderPoll(data.poll);
+            }
+        };
+    }
+
+    loadPoll();
+
+</script>
+
+</body>
+</html>
